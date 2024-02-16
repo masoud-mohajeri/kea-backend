@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  database:
+    container_name: sql_db
+    image: postgres:12.8
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=kea_user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=kea
+  redis:
+    container_name: redis_db
+    image: redis:latest
+    restart: always
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=pass
+      - REDIS_PORT=6379
+      - REDIS_DATABASES=1
+      - REDIS_HOST_PASSWORD=pass
+
+
+volumes:
+  db:
