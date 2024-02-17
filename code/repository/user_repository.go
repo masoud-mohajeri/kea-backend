@@ -27,7 +27,7 @@ func (uc *userConnection) GetUserByMobile(mobile string) (*entity.User, error) {
 	tx := uc.connection.Debug().Model(&entity.User{}).Where("mobile = ?", mobile).Last(&user)
 	if err := tx.Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
+			return nil, nil
 		}
 		return nil, errors.New("internal server error")
 	}
