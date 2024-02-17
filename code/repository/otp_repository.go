@@ -26,7 +26,6 @@ func NewOtpRepository(redisRepository RedisRepository) OtpRepository {
 }
 
 func (repo *otpRepository) Save(o *entity.Otp) (*entity.Otp, error) {
-
 	res, _ := repo.redisRepository.Get(o.Mobile)
 
 	if res != "" {
@@ -40,10 +39,10 @@ func (repo *otpRepository) Save(o *entity.Otp) (*entity.Otp, error) {
 
 	bytes, _ := json.Marshal(o)
 	if err := repo.redisRepository.Set(o.Mobile, bytes, time.Duration((o.ExpireAt-time.Now().UTC().Unix())*int64(time.Second))); err != nil {
-		return o, err
+		return nil, err
 	}
 
-	return o, nil
+	return nil, nil
 }
 
 func (repo *otpRepository) Remove(mobile string) error {

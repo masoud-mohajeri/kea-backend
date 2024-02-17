@@ -31,13 +31,13 @@ func (otpServ *otpService) Request(phone string) (*entity.Otp, error) {
 		return nil, saveError
 	}
 
-	if dbOtp.ExpireAt == otp.ExpireAt {
-		return otp, nil
+	if dbOtp != nil {
+		return dbOtp, nil
 	}
 
-	err := otpServ.smsService.sendSms(phone, dbOtp.Code)
+	err := otpServ.smsService.sendSms(phone, otp.Code)
 	if err != nil {
-		otpServ.otpRepository.Remove(dbOtp.Mobile)
+		otpServ.otpRepository.Remove(otp.Mobile)
 		return nil, errors.New("error in sending sms")
 	}
 
