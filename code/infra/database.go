@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/masoud-mohajeri/kea-backend/config"
+	"github.com/masoud-mohajeri/kea-backend/entity"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -47,6 +48,10 @@ func ConnectDB() {
 	if err != nil {
 		panic("Can not connect to database.")
 	}
+
+	db.AutoMigrate(
+		&entity.User{},
+	)
 
 	DB = db
 }
