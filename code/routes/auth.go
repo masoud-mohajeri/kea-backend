@@ -14,12 +14,13 @@ func NewAuth(prefix string, r *fiber.App) {
 	smsService := service.NewSmsService()
 	otpService := service.NewOtpService(smsService, otpRepository)
 	userRepository := repository.NewUserRepository(infra.DB)
-	authController := controller.NewAuthController(otpService, userRepository)
+	userService := service.NewUserService(userRepository)
+	authController := controller.NewAuthController(otpService, userService)
 
 	routes := r.Group(prefix)
 
 	routes.Post("otp-request", authController.OtpRequest)
-	// routes.Post("register")
+	routes.Post("register/:mobile", authController.Register)
 	// routes.Post("otp-login")
 	// routes.Post("password-login")
 	// routes.Post("change-phone")

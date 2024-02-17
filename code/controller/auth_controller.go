@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/masoud-mohajeri/kea-backend/dto"
-	"github.com/masoud-mohajeri/kea-backend/repository"
 	"github.com/masoud-mohajeri/kea-backend/service"
 )
 
@@ -17,14 +16,14 @@ type AuthController interface {
 }
 
 type authController struct {
-	otpService     service.OtpService
-	userRepository repository.UserRepository
+	otpService  service.OtpService
+	userService service.UserService
 }
 
-func NewAuthController(otpService service.OtpService, userRepository repository.UserRepository) AuthController {
+func NewAuthController(otpService service.OtpService, userService service.UserService) AuthController {
 	return &authController{
-		otpService:     otpService,
-		userRepository: userRepository,
+		otpService:  otpService,
+		userService: userService,
 	}
 }
 
@@ -44,7 +43,7 @@ func (ac *authController) OtpRequest(ctx *fiber.Ctx) error {
 		return osErr
 	}
 
-	user, urErr := ac.userRepository.GetUserByMobile(otp.Mobile)
+	user, urErr := ac.userService.GetUserByMobile(otp.Mobile)
 
 	if urErr != nil {
 		return urErr
