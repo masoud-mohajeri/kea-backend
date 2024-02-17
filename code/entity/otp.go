@@ -13,8 +13,9 @@ type Otp struct {
 
 func NewOtp() *Otp {
 	return &Otp{
-		Code:     "1111",
-		ExpireAt: time.Now().UTC().Add(1 * time.Minute).Unix(),
+		Code: "1111",
+		// get it from env
+		ExpireAt: time.Now().UTC().Add(100 * time.Minute).Unix(),
 		Attempt:  3,
 	}
 }

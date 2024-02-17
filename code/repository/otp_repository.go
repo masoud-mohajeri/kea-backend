@@ -10,8 +10,8 @@ import (
 
 type OtpRepository interface {
 	Save(*entity.Otp) (*entity.Otp, error)
-	FindOne(string, string) (*entity.Otp, error)
-	Attempt(string) (*entity.Otp, error)
+	FindOne(string) (*entity.Otp, error)
+	Attempt(string) error
 	Remove(string) error
 }
 
@@ -53,49 +53,50 @@ func (repo *otpRepository) Remove(mobile string) error {
 	return nil
 }
 
-func (repo *otpRepository) FindOne(code string, phone string) (*entity.Otp, error) {
+func (repo *otpRepository) FindOne(phone string) (*entity.Otp, error) {
 	res, err := repo.redisRepository.Get(phone)
+
+	if res == "" {
+		return nil, errors.New("otp not found")
+	}
 
 	if err != nil {
 		return nil, err
 	}
+
 	otp := new(entity.Otp)
 	if err := json.Unmarshal([]byte(res), otp); err != nil {
 		return nil, errors.New("marshal entity error")
-	}
-
-	if otp.Code != code {
-		return nil, errors.New("wrong otp code")
 	}
 
 	return otp, nil
 
 }
 
-func (repo *otpRepository) Attempt(mobile string) (*entity.Otp, error) {
+func (repo *otpRepository) Attempt(mobile string) error {
 	res, err := repo.redisRepository.Get(mobile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	otp := new(entity.Otp)
 
 	if err := json.Unmarshal([]byte(res), otp); err != nil {
-		return nil, errors.New("marshal entity error")
+		return errors.New("marshal entity error")
 	}
 
 	if otp.Attempt == 0 {
 		if err := repo.redisRepository.Remove(otp.Code); err != nil {
-			return nil, err
+			return err
 		}
 
-		return nil, errors.New("expired otp")
+		return errors.New("expired otp")
 	}
 
 	otp.Attempt = otp.Attempt - 1
 	bytes, _ := json.Marshal(otp)
 	if err := repo.redisRepository.Set(otp.Code, bytes, time.Duration((otp.ExpireAt-time.Now().UTC().Unix())*int64(time.Second))); err != nil {
-		return nil, err
+		return err
 	}
 
-	return otp, nil
+	return nil
 }

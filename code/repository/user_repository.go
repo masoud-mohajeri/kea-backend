@@ -9,6 +9,7 @@ import (
 
 type UserRepository interface {
 	GetUserByMobile(string) (*entity.User, error)
+	Save(user *entity.User) error
 }
 
 type userConnection struct {
@@ -32,4 +33,12 @@ func (uc *userConnection) GetUserByMobile(mobile string) (*entity.User, error) {
 		return nil, errors.New("internal server error")
 	}
 	return &user, nil
+}
+
+func (uc *userConnection) Save(user *entity.User) error {
+	tx := uc.connection.Debug().Create(&user)
+	if err := tx.Error; err != nil {
+		return err
+	}
+	return nil
 }

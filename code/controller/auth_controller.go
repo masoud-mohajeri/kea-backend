@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,6 +11,7 @@ import (
 
 type AuthController interface {
 	OtpRequest(ctx *fiber.Ctx) error
+	Register(ctx *fiber.Ctx) error
 	// Login(ctx *fiber.Ctx) error
 	// PasswordLogin(ctx *fiber.Ctx) error
 	// ChangePhoneNumber(ctx *fiber.Ctx) error
@@ -55,4 +57,29 @@ func (ac *authController) OtpRequest(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(http.StatusOK).JSON(dto.OTPDetails{ExpiredAt: otp.ExpireAt, IsNew: isNewUser})
+}
+
+func (ac *authController) Register(ctx *fiber.Ctx) error {
+	mobile := ctx.Params("mobile")
+	if mobile == "" {
+		return ctx.Status(http.StatusBadRequest).JSON("no mobile number")
+	}
+
+	body := new(dto.OtpValidate)
+	if parsErr := ctx.BodyParser(body); parsErr != nil {
+		return ctx.Status(http.StatusBadRequest).JSON("body parsing error")
+	}
+
+	otpValidationErr := ac.otpService.Validate(body.Code, mobile)
+	if otpValidationErr != nil {
+		fmt.Println("auth controller")
+		return ctx.Status(http.StatusBadRequest).JSON(otpValidationErr.Error())
+	}
+
+	saveErr := ac.userService.SaveUser(mobile, &body.UserInfo)
+	if saveErr != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(saveErr.Error())
+	}
+
+	return ctx.Status(http.StatusCreated).JSON("created")
 }

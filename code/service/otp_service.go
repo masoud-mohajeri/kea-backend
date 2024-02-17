@@ -8,7 +8,8 @@ import (
 )
 
 type OtpService interface {
-	Request(string) (*entity.Otp, error)
+	Request(mobile string) (*entity.Otp, error)
+	Validate(code string, mobile string) error
 }
 
 type otpService struct {
@@ -23,9 +24,9 @@ func NewOtpService(smsService SmsService, otpRepository repository.OtpRepository
 	}
 }
 
-func (otpServ *otpService) Request(phone string) (*entity.Otp, error) {
+func (otpServ *otpService) Request(mobile string) (*entity.Otp, error) {
 	otp := entity.NewOtp()
-	otp.Mobile = phone
+	otp.Mobile = mobile
 	dbOtp, saveError := otpServ.otpRepository.Save(otp)
 	if saveError != nil {
 		return nil, saveError
@@ -35,11 +36,31 @@ func (otpServ *otpService) Request(phone string) (*entity.Otp, error) {
 		return dbOtp, nil
 	}
 
-	err := otpServ.smsService.sendSms(phone, otp.Code)
+	err := otpServ.smsService.sendSms(mobile, otp.Code)
 	if err != nil {
 		otpServ.otpRepository.Remove(otp.Mobile)
 		return nil, errors.New("error in sending sms")
 	}
 
 	return otp, nil
+}
+
+func (ots *otpService) Validate(code string, mobile string) error {
+
+	otp, err := ots.otpRepository.FindOne(mobile)
+
+	if err != nil {
+		return err
+	}
+
+	if otp == nil {
+		return errors.New("go get otp")
+	}
+
+	if otp.Code != code {
+		ots.otpRepository.Attempt(mobile)
+		return errors.New("otp did not match")
+	}
+
+	return nil
 }
