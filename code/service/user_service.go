@@ -11,6 +11,7 @@ import (
 
 type UserService interface {
 	GetUserByMobile(string) (*entity.User, error)
+	PasswordLogin(dto.PasswordLoginDto) (*entity.User, error)
 	SaveUser(string, *dto.UserInfo) error
 }
 
@@ -47,4 +48,23 @@ func (us *userService) SaveUser(mobile string, info *dto.UserInfo) error {
 	saveErr := us.userRepository.Save(user)
 
 	return saveErr
+}
+
+func (us *userService) PasswordLogin(userInfo dto.PasswordLoginDto) (*entity.User, error) {
+	user, err := us.userRepository.GetUserByMobile(userInfo.Mobile)
+
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	passErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userInfo.Password))
+
+	if passErr != nil {
+		return user, errors.New("wrong password")
+	}
+
+	return user, nil
 }
