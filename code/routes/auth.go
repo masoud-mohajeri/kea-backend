@@ -15,7 +15,8 @@ func NewAuth(prefix string, r *fiber.App) {
 	otpService := service.NewOtpService(smsService, otpRepository)
 	userRepository := repository.NewUserRepository(infra.DB)
 	userService := service.NewUserService(userRepository)
-	authController := controller.NewAuthController(otpService, userService)
+	tokenService := service.NewTokenService()
+	authController := controller.NewAuthController(otpService, userService, tokenService)
 
 	routes := r.Group(prefix)
 

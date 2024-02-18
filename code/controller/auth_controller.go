@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/masoud-mohajeri/kea-backend/constants"
 	"github.com/masoud-mohajeri/kea-backend/dto"
 	"github.com/masoud-mohajeri/kea-backend/service"
 )
@@ -18,14 +18,16 @@ type AuthController interface {
 }
 
 type authController struct {
-	otpService  service.OtpService
-	userService service.UserService
+	otpService   service.OtpService
+	userService  service.UserService
+	tokenService service.TokenService
 }
 
-func NewAuthController(otpService service.OtpService, userService service.UserService) AuthController {
+func NewAuthController(otpService service.OtpService, userService service.UserService, tokenService service.TokenService) AuthController {
 	return &authController{
-		otpService:  otpService,
-		userService: userService,
+		otpService:   otpService,
+		userService:  userService,
+		tokenService: tokenService,
 	}
 }
 
@@ -72,7 +74,6 @@ func (ac *authController) Register(ctx *fiber.Ctx) error {
 
 	otpValidationErr := ac.otpService.Validate(body.Code, mobile)
 	if otpValidationErr != nil {
-		fmt.Println("auth controller")
 		return ctx.Status(http.StatusBadRequest).JSON(otpValidationErr.Error())
 	}
 
@@ -81,5 +82,10 @@ func (ac *authController) Register(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusInternalServerError).JSON(saveErr.Error())
 	}
 
-	return ctx.Status(http.StatusCreated).JSON("created")
+	token, errT := ac.tokenService.CreateToken(mobile, constants.USER)
+	if errT != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
+	}
+
+	return ctx.Status(http.StatusCreated).JSON(token)
 }
