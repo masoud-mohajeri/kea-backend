@@ -51,13 +51,10 @@ func (us *userService) SaveUser(mobile string, info *dto.UserInfo) error {
 }
 
 func (us *userService) PasswordLogin(userInfo dto.PasswordLoginDto) (*entity.User, error) {
-	user, err := us.userRepository.GetUserByMobile(userInfo.Mobile)
+	user, err := us.GetUserByMobile(userInfo.Mobile)
 
 	if err != nil {
 		return nil, errors.New(err.Error())
-	}
-	if user == nil {
-		return nil, errors.New("user not found")
 	}
 
 	passErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userInfo.Password))

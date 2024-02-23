@@ -13,7 +13,7 @@ const (
 )
 
 func GetRole(role string) (UserRole, error) {
-	if strings.ToUpper(role) == "Admin" {
+	if strings.ToUpper(role) == "ADMIN" {
 		return ADMIN, nil
 	} else if strings.ToUpper(role) == "USER" {
 		return USER, nil

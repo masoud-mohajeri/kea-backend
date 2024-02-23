@@ -13,7 +13,7 @@ type AuthController interface {
 	OtpRequest(ctx *fiber.Ctx) error
 	Register(ctx *fiber.Ctx) error
 	PasswordLogin(ctx *fiber.Ctx) error
-	// Login(ctx *fiber.Ctx) error
+	OtpLogin(ctx *fiber.Ctx) error
 	// ChangePhoneNumber(ctx *fiber.Ctx) error
 }
 
@@ -39,18 +39,17 @@ func (ac *authController) OtpRequest(ctx *fiber.Ctx) error {
 
 	vErr := req.Validate()
 	if vErr != nil {
-		return vErr
+		return ctx.Status(http.StatusBadRequest).JSON(vErr.Error())
 	}
 
 	otp, osErr := ac.otpService.Request(req.Mobile)
 	if osErr != nil {
-		return osErr
+		return ctx.Status(http.StatusBadRequest).JSON(osErr.Error())
 	}
 
 	user, urErr := ac.userService.GetUserByMobile(otp.Mobile)
-
 	if urErr != nil {
-		return urErr
+		return ctx.Status(http.StatusBadRequest).JSON(urErr.Error())
 	}
 	isNewUser := false
 
@@ -107,6 +106,38 @@ func (ac *authController) PasswordLogin(ctx *fiber.Ctx) error {
 	if user == nil {
 		return ctx.Status(http.StatusNotFound).JSON("user not found")
 	}
+
+	role, roleErr := constants.GetRole(user.Role)
+	if roleErr != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(roleErr.Error())
+	}
+
+	token, errT := ac.tokenService.CreateToken(body.Mobile, role)
+	if errT != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
+	}
+
+	return ctx.Status(http.StatusOK).JSON(token)
+}
+
+func (ac *authController) OtpLogin(ctx *fiber.Ctx) error {
+	body := new(dto.OtpLoginDto)
+
+	parsErr := ctx.BodyParser(body)
+	if parsErr != nil {
+		return ctx.Status(http.StatusBadRequest).JSON("body parsing error")
+	}
+
+	err := ac.otpService.Validate(body.Otp, body.Mobile)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	user, err := ac.userService.GetUserByMobile(body.Mobile)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
 	role, roleErr := constants.GetRole(user.Role)
 	if roleErr != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(roleErr.Error())

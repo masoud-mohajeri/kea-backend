@@ -5,8 +5,3 @@ type UserInfo struct {
 	LastName  string `json:"last_name"`
 	Password  string `json:"password"`
 }
-
-type PasswordLoginDto struct {
-	Mobile   string `json:"mobile"`
-	Password string `json:"password"`
-}

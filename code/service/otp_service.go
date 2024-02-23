@@ -61,6 +61,7 @@ func (ots *otpService) Validate(code string, mobile string) error {
 		ots.otpRepository.Attempt(mobile)
 		return errors.New("otp did not match")
 	}
+	ots.otpRepository.Remove(otp.Mobile)
 
 	return nil
 }

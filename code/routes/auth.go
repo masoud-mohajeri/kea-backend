@@ -23,7 +23,7 @@ func NewAuth(prefix string, r *fiber.App) {
 	routes.Post("otp-request", authController.OtpRequest)
 	routes.Post("register/:mobile", authController.Register)
 	routes.Post("password-login", authController.PasswordLogin)
-	// routes.Post("otp-login")
+	routes.Post("otp-login", authController.OtpLogin)
 	// routes.Post("change-phone")
 
 }
