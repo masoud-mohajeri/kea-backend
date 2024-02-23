@@ -12,7 +12,7 @@ import (
 type UserService interface {
 	GetUserByMobile(string) (*entity.User, error)
 	PasswordLogin(dto.PasswordLoginDto) (*entity.User, error)
-	SaveUser(string, *dto.UserInfo) error
+	SaveUser(string, *dto.UserInfo) (*entity.User, error)
 	UpdateMobile(mobile, newMobile string) (*entity.User, error)
 }
 
@@ -30,11 +30,11 @@ func (us *userService) GetUserByMobile(mobile string) (*entity.User, error) {
 	return us.userRepository.GetUserByMobile(mobile)
 }
 
-func (us *userService) SaveUser(mobile string, info *dto.UserInfo) error {
+func (us *userService) SaveUser(mobile string, info *dto.UserInfo) (*entity.User, error) {
 	// TODO: create a service or sth for this!
 	password, err := bcrypt.GenerateFromPassword([]byte(info.Password), 6)
 	if err != nil {
-		return errors.New("error in encrypting password")
+		return nil, errors.New("error in encrypting password")
 	}
 
 	user := &entity.User{
@@ -48,7 +48,7 @@ func (us *userService) SaveUser(mobile string, info *dto.UserInfo) error {
 
 	saveErr := us.userRepository.Save(user)
 
-	return saveErr
+	return user, saveErr
 }
 
 func (us *userService) PasswordLogin(userInfo dto.PasswordLoginDto) (*entity.User, error) {

@@ -77,12 +77,14 @@ func (ac *authController) Register(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(otpValidationErr.Error())
 	}
 
-	saveErr := ac.userService.SaveUser(mobile, &body.UserInfo)
+	user, saveErr := ac.userService.SaveUser(mobile, &body.UserInfo)
 	if saveErr != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(saveErr.Error())
 	}
 
-	token, errT := ac.tokenService.CreateToken(mobile, constants.USER)
+	user.Role = constants.ROLE_USER
+
+	token, errT := ac.tokenService.CreateToken(user)
 	if errT != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
 	}
@@ -108,12 +110,7 @@ func (ac *authController) PasswordLogin(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusNotFound).JSON("user not found")
 	}
 
-	role, roleErr := constants.GetRole(user.Role)
-	if roleErr != nil {
-		return ctx.Status(http.StatusInternalServerError).JSON(roleErr.Error())
-	}
-
-	token, errT := ac.tokenService.CreateToken(body.Mobile, role)
+	token, errT := ac.tokenService.CreateToken(user)
 	if errT != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
 	}
@@ -139,12 +136,7 @@ func (ac *authController) OtpLogin(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
 	}
 
-	role, roleErr := constants.GetRole(user.Role)
-	if roleErr != nil {
-		return ctx.Status(http.StatusInternalServerError).JSON(roleErr.Error())
-	}
-
-	token, errT := ac.tokenService.CreateToken(body.Mobile, role)
+	token, errT := ac.tokenService.CreateToken(user)
 	if errT != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
 	}
@@ -170,12 +162,7 @@ func (ac *authController) ChangeMobile(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
 	}
 
-	role, roleErr := constants.GetRole(user.Role)
-	if roleErr != nil {
-		return ctx.Status(http.StatusInternalServerError).JSON(roleErr.Error())
-	}
-
-	token, errT := ac.tokenService.CreateToken(body.Mobile, role)
+	token, errT := ac.tokenService.CreateToken(user)
 	if errT != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
 	}
