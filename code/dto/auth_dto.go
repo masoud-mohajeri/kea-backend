@@ -15,3 +15,7 @@ type ChangeMobileDto struct {
 	NewMobile string `json:"new_mobile"`
 	Otp       string `json:"otp"`
 }
+
+type RefreshTokenDto struct {
+	RefreshToken string `json:"refresh_token"`
+}

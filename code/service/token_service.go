@@ -1,44 +1,55 @@
 package service
 
 import (
+	"errors"
 	"time"
 
 	"github.com/masoud-mohajeri/kea-backend/dto"
+	"github.com/masoud-mohajeri/kea-backend/entity"
 
 	"github.com/masoud-mohajeri/kea-backend/config"
-	"github.com/masoud-mohajeri/kea-backend/constants"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type TokenService interface {
-	CreateToken(mobile string, role constants.UserRole) (*dto.TokenDto, error)
-	ParsToken(tokenString string) (*jwt.Token, error)
+	CreateToken(user *entity.User) (*dto.TokenDto, error)
+	ExtractToken(tokenString string) (string, error)
 }
 
-type tokenService struct{}
+type tokenService struct {
+}
 
 func NewTokenService() TokenService {
 	return &tokenService{}
 }
 
-func (ts *tokenService) CreateToken(mobile string, role constants.UserRole) (*dto.TokenDto, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+func (ts *tokenService) CreateToken(user *entity.User) (*dto.TokenDto, error) {
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"mobile": mobile,
-			"role":   role,
+			"mobile": user.Mobile,
+			"role":   user.Role,
 			"exp":    time.Now().Add(config.CommonConfig.AccessTokenDuration).Unix(),
 		})
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"mobile": user.Mobile,
+			"exp":    time.Now().Add(config.CommonConfig.RefreshTokenDuration).Unix(),
+		})
 
-	tokenString, err := token.SignedString(config.CommonConfig.TokenSecret)
-	if err != nil {
-		return nil, err
+	accessTokenString, errAcc := accessToken.SignedString(config.CommonConfig.TokenSecret)
+	refreshTokenString, errRef := refreshToken.SignedString(config.CommonConfig.TokenSecret)
+	if errAcc != nil {
+		return nil, errAcc
+	}
+	if errRef != nil {
+		return nil, errRef
 	}
 
-	return &dto.TokenDto{AccessToken: tokenString}, nil
+	return &dto.TokenDto{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
 }
 
-func (ts *tokenService) ParsToken(tokenString string) (*jwt.Token, error) {
+func (ts *tokenService) parsToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return config.CommonConfig.TokenSecret, nil
 	})
@@ -48,4 +59,24 @@ func (ts *tokenService) ParsToken(tokenString string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (ts *tokenService) ExtractToken(tokenString string) (string, error) {
+	token, errT := ts.parsToken(tokenString)
+	if errT != nil || !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	exp, _ := token.Claims.GetExpirationTime()
+	if exp.Before(time.Now()) {
+		return "", errors.New("token expired")
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	mobile, ok := claims["mobile"].(string)
+	if !ok {
+		return "", errors.New("illegal token")
+	}
+
+	return mobile, nil
 }

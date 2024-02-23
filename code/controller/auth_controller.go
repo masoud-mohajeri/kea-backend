@@ -15,7 +15,7 @@ type AuthController interface {
 	PasswordLogin(ctx *fiber.Ctx) error
 	OtpLogin(ctx *fiber.Ctx) error
 	ChangeMobile(ctx *fiber.Ctx) error
-	// refresh token
+	RefreshToken(ctx *fiber.Ctx) error
 }
 
 type authController struct {
@@ -136,6 +136,10 @@ func (ac *authController) OtpLogin(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
 	}
 
+	if user == nil {
+		return ctx.Status(http.StatusNotFound).JSON("user not found")
+	}
+
 	token, errT := ac.tokenService.CreateToken(user)
 	if errT != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
@@ -160,6 +164,36 @@ func (ac *authController) ChangeMobile(ctx *fiber.Ctx) error {
 	user, err := ac.userService.UpdateMobile(body.Mobile, body.NewMobile)
 	if err != nil {
 		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	token, errT := ac.tokenService.CreateToken(user)
+	if errT != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
+	}
+
+	return ctx.Status(http.StatusOK).JSON(token)
+}
+
+func (ac *authController) RefreshToken(ctx *fiber.Ctx) error {
+	body := new(dto.RefreshTokenDto)
+
+	parsErr := ctx.BodyParser(body)
+	if parsErr != nil {
+		return ctx.Status(http.StatusBadRequest).JSON("body parsing error")
+	}
+
+	mobile, err := ac.tokenService.ExtractToken(body.RefreshToken)
+	if err != nil {
+		return ctx.Status(http.StatusUnauthorized).JSON(err.Error())
+	}
+
+	user, err := ac.userService.GetUserByMobile(mobile)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	if user == nil {
+		return ctx.Status(http.StatusNotFound).JSON("user not found")
 	}
 
 	token, errT := ac.tokenService.CreateToken(user)

@@ -7,9 +7,10 @@ import (
 )
 
 type common struct {
-	Port                string
-	TokenSecret         []byte
-	AccessTokenDuration time.Duration
+	Port                 string
+	TokenSecret          []byte
+	AccessTokenDuration  time.Duration
+	RefreshTokenDuration time.Duration
 }
 
 var (
@@ -20,6 +21,7 @@ func commonConfigModuleInit() {
 	CommonConfig.Port = os.Getenv("PORT")
 	CommonConfig.TokenSecret = []byte(os.Getenv("TOKEN_SECRET"))
 	CommonConfig.AccessTokenDuration, _ = time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
+	CommonConfig.RefreshTokenDuration, _ = time.ParseDuration(os.Getenv("REFRESH_TOKEN_DURATION"))
 
 	err := CommonConfig.validation()
 
