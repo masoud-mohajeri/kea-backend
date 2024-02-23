@@ -14,7 +14,8 @@ type AuthController interface {
 	Register(ctx *fiber.Ctx) error
 	PasswordLogin(ctx *fiber.Ctx) error
 	OtpLogin(ctx *fiber.Ctx) error
-	// ChangePhoneNumber(ctx *fiber.Ctx) error
+	ChangeMobile(ctx *fiber.Ctx) error
+	// refresh token
 }
 
 type authController struct {
@@ -121,7 +122,7 @@ func (ac *authController) PasswordLogin(ctx *fiber.Ctx) error {
 }
 
 func (ac *authController) OtpLogin(ctx *fiber.Ctx) error {
-	body := new(dto.OtpLoginDto)
+	body := new(dto.OtpConfirmationDto)
 
 	parsErr := ctx.BodyParser(body)
 	if parsErr != nil {
@@ -134,6 +135,37 @@ func (ac *authController) OtpLogin(ctx *fiber.Ctx) error {
 	}
 
 	user, err := ac.userService.GetUserByMobile(body.Mobile)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	role, roleErr := constants.GetRole(user.Role)
+	if roleErr != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(roleErr.Error())
+	}
+
+	token, errT := ac.tokenService.CreateToken(body.Mobile, role)
+	if errT != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(errT.Error())
+	}
+
+	return ctx.Status(http.StatusOK).JSON(token)
+}
+
+func (ac *authController) ChangeMobile(ctx *fiber.Ctx) error {
+	body := new(dto.ChangeMobileDto)
+
+	parsErr := ctx.BodyParser(body)
+	if parsErr != nil {
+		return ctx.Status(http.StatusBadRequest).JSON("body parsing error")
+	}
+
+	err := ac.otpService.Validate(body.Otp, body.Mobile)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	user, err := ac.userService.UpdateMobile(body.Mobile, body.NewMobile)
 	if err != nil {
 		return ctx.Status(http.StatusBadRequest).JSON(err.Error())
 	}

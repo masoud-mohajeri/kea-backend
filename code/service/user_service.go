@@ -13,6 +13,7 @@ type UserService interface {
 	GetUserByMobile(string) (*entity.User, error)
 	PasswordLogin(dto.PasswordLoginDto) (*entity.User, error)
 	SaveUser(string, *dto.UserInfo) error
+	UpdateMobile(mobile, newMobile string) (*entity.User, error)
 }
 
 type userService struct {
@@ -61,6 +62,24 @@ func (us *userService) PasswordLogin(userInfo dto.PasswordLoginDto) (*entity.Use
 
 	if passErr != nil {
 		return user, errors.New("wrong password")
+	}
+
+	return user, nil
+}
+func (us *userService) UpdateMobile(mobile, newMobile string) (*entity.User, error) {
+	user, err := us.GetUserByMobile(mobile)
+
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	user.Mobile = newMobile
+	err = us.userRepository.Update(user)
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil

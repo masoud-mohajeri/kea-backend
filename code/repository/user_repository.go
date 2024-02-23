@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
 	GetUserByMobile(string) (*entity.User, error)
 	Save(user *entity.User) error
+	Update(user *entity.User) error
 }
 
 type userConnection struct {
@@ -37,6 +38,14 @@ func (uc *userConnection) GetUserByMobile(mobile string) (*entity.User, error) {
 
 func (uc *userConnection) Save(user *entity.User) error {
 	tx := uc.connection.Debug().Create(&user)
+	if err := tx.Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uc *userConnection) Update(user *entity.User) error {
+	tx := uc.connection.Debug().Model(&entity.User{}).Where("id = ?", user.ID).Updates(user)
 	if err := tx.Error; err != nil {
 		return err
 	}

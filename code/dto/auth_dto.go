@@ -5,7 +5,13 @@ type PasswordLoginDto struct {
 	Password string `json:"password"`
 }
 
-type OtpLoginDto struct {
+type OtpConfirmationDto struct {
 	Mobile string `json:"mobile"`
 	Otp    string `json:"otp"`
+}
+
+type ChangeMobileDto struct {
+	Mobile    string `json:"mobile"`
+	NewMobile string `json:"new_mobile"`
+	Otp       string `json:"otp"`
 }
